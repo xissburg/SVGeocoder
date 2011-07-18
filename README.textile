@@ -1,6 +1,6 @@
-h1. SVGeocoder
+h1. SVGeocoder for iOS 5
 
-SVGeocoder fills the lack of a forward geocoding class on iOS, and is an improved alternative to Apple's unreliable @MKReverseGeocoder@. It uses "JSONKit":https://github.com/johnezang/JSONKit as well as the "Google Geocoding API":http://code.google.com/apis/maps/documentation/geocoding/ as its data provider so make sure you read their "Terms of Service":http://code.google.com/apis/maps/terms.html#section_10_12 before using SVGeocoder. 
+SVGeocoder fills the lack of a forward geocoding class on iOS, and is an improved alternative to Apple's unreliable @MKReverseGeocoder@. It uses iOS 5's ARC, NSJSONSerializer (thanks "aufflick":https://github.com/aufflick) as well as the "Google Geocoding API":http://code.google.com/apis/maps/documentation/geocoding/ as its data provider so make sure you read their "Terms of Service":http://code.google.com/apis/maps/terms.html#section_10_12 before using SVGeocoder. 
 
 h2. Installation
 
@@ -68,6 +68,7 @@ SVPlacemark is basically an "MKPlacemark":http://developer.apple.com/library/ios
 	coordinate = {
 		latitude = "46.01529";
 		longitude = "-73.76997";
-	}
+	},
+	formattedAddress = "3456 Rue Saint-Denis, Montreal, QC H2L 4S9, Canada"
 }
 </pre>
