@@ -11,8 +11,6 @@
 #import "SVGeocoder.h" 
 #import <MapKit/MapKit.h>
 
-#define kSVGeocoderTimeoutInterval 20
-
 enum {
     SVGeocoderStateReady = 0,
     SVGeocoderStateExecuting,
@@ -37,7 +35,6 @@ typedef NSUInteger SVGeocoderState;
 @property (nonatomic, copy) SVGeocoderCompletionHandler operationCompletionBlock;
 @property (nonatomic, readwrite) SVGeocoderState state;
 @property (nonatomic, strong) NSString *requestPath;
-@property (nonatomic, strong) NSTimer *timeoutTimer; // see http://stackoverflow.com/questions/2736967
 
 - (SVGeocoder*)initWithParameters:(NSMutableDictionary*)parameters completion:(SVGeocoderCompletionHandler)block;
 
@@ -53,7 +50,7 @@ typedef NSUInteger SVGeocoderState;
 
 // private properties
 @synthesize operationRequest, operationData, operationConnection, operationURLResponse, state;
-@synthesize operationCompletionBlock, timeoutTimer;
+@synthesize operationCompletionBlock;
 
 #pragma mark -
 
@@ -123,7 +120,6 @@ typedef NSUInteger SVGeocoderState;
     self = [super init];
     self.operationCompletionBlock = block;
     self.operationRequest = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:@"http://maps.googleapis.com/maps/api/geocode/json"]];
-    [self.operationRequest setTimeoutInterval:kSVGeocoderTimeoutInterval];
 
     [parameters setValue:@"true" forKey:@"sensor"];
     [parameters setValue:[[NSLocale currentLocale] objectForKey:NSLocaleLanguageCode] forKey:@"language"];
@@ -153,15 +149,6 @@ typedef NSUInteger SVGeocoderState;
     [self.operationRequest setURL:[NSURL URLWithString:baseAddress]];
 }
 
-- (void)setTimeoutTimer:(NSTimer *)newTimer {
-    
-    if(timeoutTimer)
-        [timeoutTimer invalidate], timeoutTimer = nil;
-    
-    if(newTimer)
-        timeoutTimer = newTimer;
-}
-
 #pragma mark - NSOperation methods
 
 - (void)start {
@@ -181,7 +168,6 @@ typedef NSUInteger SVGeocoderState;
     [self didChangeValueForKey:@"isExecuting"];
     
     self.operationData = [[NSMutableData alloc] init];
-    self.timeoutTimer = [NSTimer scheduledTimerWithTimeInterval:kSVGeocoderTimeoutInterval target:self selector:@selector(requestTimeout) userInfo:nil repeats:NO];
     
     self.operationConnection = [[NSURLConnection alloc] initWithRequest:self.operationRequest delegate:self startImmediately:NO];
     [self.operationConnection start];
@@ -239,18 +225,6 @@ typedef NSUInteger SVGeocoderState;
 
 #pragma mark -
 #pragma mark NSURLConnectionDelegate
-
-- (void)requestTimeout {
-    NSURL *failingURL = self.operationRequest.URL;
-    
-    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                              @"The operation timed out.", NSLocalizedDescriptionKey,
-                              failingURL, NSURLErrorFailingURLErrorKey,
-                              failingURL.absoluteString, NSURLErrorFailingURLStringErrorKey, nil];
-    
-    NSError *timeoutError = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorTimedOut userInfo:userInfo];
-    [self connection:nil didFailWithError:timeoutError];
-}
 
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
@@ -316,8 +290,6 @@ typedef NSUInteger SVGeocoderState;
 }
 
 - (void)callCompletionBlockWithResponse:(id)response error:(NSError *)error {
-    self.timeoutTimer = nil;
-    
     dispatch_async(dispatch_get_main_queue(), ^{
         NSError *serverError = error;
         
